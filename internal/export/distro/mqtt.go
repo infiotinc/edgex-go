@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
@@ -74,12 +75,17 @@ func (sender *mqttSender) Send(data []byte, ctx context.Context) bool {
 
 	token := sender.client.Publish(sender.topic, 0, false, data)
 	// FIXME: could be removed? set of tokens?
-	token.Wait()
-	if token.Error() != nil {
-		LoggingClient.Error(token.Error().Error())
-		return false
+	respReceived := token.WaitTimeout(5 * time.Second)
+	if respReceived {
+		if token.Error() != nil {
+			LoggingClient.Error(token.Error().Error())
+			return false
+		} else {
+			LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
+			return true
+		}
 	} else {
-		LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
-		return true
+		LoggingClient.Error("MQTT timeout")
+		return false
 	}
 }

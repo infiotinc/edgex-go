@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+<<<<<<< HEAD
 	"strconv"
 
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
@@ -29,6 +30,18 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
+=======
+	"runtime"
+	"strconv"
+
+	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/gorilla/mux"
+>>>>>>> support for JWT based authentication with gcp iot core.
 )
 
 func LoadRestRoutes() *mux.Router {
@@ -47,6 +60,7 @@ func LoadRestRoutes() *mux.Router {
 	r.HandleFunc(clients.ApiEventRoute, eventHandler).Methods(http.MethodGet, http.MethodPut, http.MethodPost)
 	e := r.PathPrefix(clients.ApiEventRoute).Subrouter()
 	e.HandleFunc("/scrub", scrubHandler).Methods(http.MethodDelete)
+	e.HandleFunc("/retry", retryHandler).Methods(http.MethodPost, http.MethodGet)
 	e.HandleFunc("/scruball", scrubAllHandler).Methods(http.MethodDelete)
 	e.HandleFunc("/count", eventCountHandler).Methods(http.MethodGet)
 	e.HandleFunc("/count/{deviceId}", eventCountByDeviceIdHandler).Methods(http.MethodGet)
@@ -214,6 +228,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			LoggingClient.Error(err.Error())
 			return
 		}
+
 		newId, err := addNewEvent(evt, ctx)
 
 		w.WriteHeader(http.StatusOK)
@@ -579,6 +594,43 @@ func scrubHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strconv.Itoa(count)))
+
+	}
+}
+
+// Retry all the events that have not been pushed
+// api/v1/event/retry
+// Support posting of events to export-distro through a POST call and
+// Getting a count of events that haven't been out through a GET call
+func retryHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	switch r.Method {
+	case http.MethodPost:
+		LoggingClient.Info("Retrying to send unpushed events")
+		count, err := retryFailedEvents()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strconv.Itoa(count)))
+
+		//TODO: Should this call return a list of events rather than count?
+	case http.MethodGet:
+		LoggingClient.Info("Getting a count of unpushed events")
+		count, err := getUnPushedEventsCount()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		LoggingClient.Info(fmt.Sprintf("Number of unpushed evts: %d\n", count))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strconv.Itoa(count)))

@@ -216,8 +216,17 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 	if reg.encrypt != nil {
 		bytes = reg.encrypt.Transform(compressed)
 	}
-	if reg.sender.Send(bytes, ctx) && Configuration.Writable.MarkPushed {
-		return ec.MarkPushed(event.ID, ctx)
+	if reg.sender.Send(bytes, ctx) == false {
+		LoggingClient.Error("MQTT message send failure")
+		return
+	}
+
+	if Configuration.Writable.MarkPushed {
+		id := event.ID.Hex()
+		err := ec.MarkPushed(event.ID, ctx)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
+		}
 	}
 	return
 }

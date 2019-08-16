@@ -201,6 +201,11 @@ func (mc MongoClient) EventsPushed() ([]contract.Event, error) {
 	return mc.mapEvents(mc.getEvents(bson.M{"pushed": bson.M{"$gt": int64(0)}}))
 }
 
+// Get all of the events that have not been pushed out by export-distro
+func (mc *MongoClient) EventsNotPushed() ([]models.Event, error) {
+	return mc.getEvents(bson.M{"pushed": bson.M{"$eq": int64(0)}})
+}
+
 // Delete all of the readings and all of the events
 func (mc MongoClient) ScrubAllEvents() error {
 	s := mc.getSessionCopy()

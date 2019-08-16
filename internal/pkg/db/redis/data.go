@@ -321,6 +321,26 @@ func (c *Client) EventsPushed() (events []contract.Event, err error) {
 	return events, nil
 }
 
+// Get events that have not been pushed (pushed field is 0)
+func (c *Client) EventsNotPushed() (events []models.Event, err error) {
+	conn := c.Pool.Get()
+	defer conn.Close()
+
+	//TODO: Not sure whether this query is right
+	objects, err := getObjectsByScore(conn, db.EventsCollection+":pushed", 0, 0, 0)
+	if err != nil {
+		return events, err
+	}
+
+	events = make([]models.Event, len(objects))
+	err = unmarshalEvents(objects, events)
+	if err != nil {
+		return events, err
+	}
+
+	return events, nil
+}
+
 // Delete all readings and events
 func (c *Client) ScrubAllEvents() (err error) {
 	conn := c.Pool.Get()
