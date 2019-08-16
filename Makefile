@@ -8,8 +8,8 @@
 .PHONY: build clean test docker run
 
 
-GO=CGO_ENABLED=0 go
-GOCGO=CGO_ENABLED=1 go
+GO=CGO_ENABLED=0 $(GO_CROSS) go
+GOCGO=CGO_ENABLED=1 $(CGO_CROSS) go
 
 DOCKERS=docker_config_seed docker_export_client docker_export_distro docker_core_data docker_core_metadata docker_core_command docker_support_logging docker_support_notifications docker_sys_mgmt_agent docker_support_scheduler
 .PHONY: $(DOCKERS)

@@ -190,6 +190,16 @@ func (m *MemDB) EventsPushed() ([]models.Event, error) {
 	return events, nil
 }
 
+func (m *MemDB) EventsNotPushed() ([]models.Event, error) {
+	events := []models.Event{}
+	for _, e := range m.events {
+		if e.Pushed == 0 {
+			events = append(events, e)
+		}
+	}
+	return events, nil
+}
+
 func (m *MemDB) ScrubAllEvents() error {
 	m.events = nil
 	m.readings = nil

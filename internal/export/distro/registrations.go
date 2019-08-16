@@ -189,7 +189,12 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		encrypted = reg.encrypt.Transform(compressed)
 	}
 
-	if reg.sender.Send(encrypted, event) && Configuration.MarkPushed {
+	if reg.sender.Send(encrypted, event) == false {
+		LoggingClient.Error("MQTT message send failure")
+		return
+	}
+
+	if Configuration.MarkPushed {
 		id := event.ID.Hex()
 		err := ec.MarkPushed(id)
 

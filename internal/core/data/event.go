@@ -109,6 +109,8 @@ func addNewEvent(e models.Event) (string, error) {
 		retVal = id.Hex() //Coupling to Mongo in the model
 	}
 
+	LoggingClient.Info(fmt.Sprintf("Posting Event of len: %d, id: %v", len(e.String()), retVal))
+
 	putEventOnQueue(e)                              // Push the aux struct to export service (It has the actual readings)
 	chEvents <- DeviceLastReported{e.Device}        // update last reported connected (device)
 	chEvents <- DeviceServiceLastReported{e.Device} // update last reported connected (device service)
@@ -250,7 +252,7 @@ func deleteEvents(deviceId string) (int, error) {
 	return count, nil
 }
 
-func scrubPushedEvents()(int, error) {
+func scrubPushedEvents() (int, error) {
 	LoggingClient.Info("Scrubbing events.  Deleting all events that have been pushed")
 
 	// Get the events
@@ -263,10 +265,56 @@ func scrubPushedEvents()(int, error) {
 	// Delete all the events
 	count := len(events)
 	for _, event := range events {
+		LoggingClient.Info(fmt.Sprintf("Deleting ID: %v", event.ID.Hex()))
 		if err = deleteEvent(event); err != nil {
 			LoggingClient.Error(err.Error())
 			return 0, err
 		}
+	}
+
+	return count, nil
+}
+
+//Get the count of events that haven't been pushed out by export-distro
+//TODO: Should there be a time check on the returned events to ensure no "in-flight"
+//events are retried??
+func getUnPushedEventsCount() (int, error) {
+	LoggingClient.Info("Getting all events that have not been pushed")
+
+	// Get the events that haven't been sent out by export-distro
+	events, err := dbClient.EventsNotPushed()
+	if err != nil {
+		LoggingClient.Error(err.Error())
+		return 0, err
+	}
+
+	// Log the events for debugging purposes, can send back the events in future
+	count := len(events)
+	for _, event := range events {
+		LoggingClient.Info(fmt.Sprintf("Unpushed ID: %v", event.ID.Hex()))
+	}
+
+	return count, nil
+}
+
+//Try to send events to export-distro again for sending out through MQTT
+//TODO: Should there be a time check on returned events to ensure no "in-flight"
+//events are retried??
+func retryFailedEvents() (int, error) {
+	LoggingClient.Info("Retrying to send events that haven't been pushed out")
+
+	// Get the events that haven't been sent out by export-distro
+	events, err := dbClient.EventsNotPushed()
+	if err != nil {
+		LoggingClient.Error(err.Error())
+		return 0, err
+	}
+
+	// Add all the events to zeromq for pushing to export-distro
+	count := len(events)
+	for _, event := range events {
+		LoggingClient.Info(fmt.Sprintf("Adding event ID: %v to 0MQ", event.ID.Hex()))
+		putEventOnQueue(event) // Push the aux struct to export service (It has the actual readings)
 	}
 
 	return count, nil
