@@ -243,7 +243,6 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		LoggingClient.Info("Updating event: " + from.ID.Hex())
 		err = updateEvent(from)
 		if err != nil {
 			switch t := err.(type) {
@@ -383,8 +382,6 @@ func eventIdHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	// Set the 'pushed' timestamp for the event to the current time - event is going to another (not EdgeX) service
 	case http.MethodPut:
-		LoggingClient.Info("Updating event: " + id)
-
 		err := updateEventPushDate(id)
 		if err != nil {
 			switch x := err.(type) {
@@ -614,7 +611,6 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		LoggingClient.Info("Retrying to send unpushed events")
 		count, err := retryFailedEvents()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -627,14 +623,13 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 		//TODO: Should this call return a list of events rather than count?
 	case http.MethodGet:
-		LoggingClient.Info("Getting a count of unpushed events")
 		count, err := getUnPushedEventsCount()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		LoggingClient.Info(fmt.Sprintf("Number of unpushed evts: %d\n", count))
+		LoggingClient.Info(fmt.Sprintf("Number of outstanding events: %d", count))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strconv.Itoa(count)))
