@@ -191,14 +191,41 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 		return errors.New("unable to parse event from string " + str)
 	}
 
+	LoggingClient.Debug(fmt.Sprintf("%s Processing Event event: %s",
+		event.Device, event.ID.Hex()))
+
 	data := event.ToContract()
+
 	for _, f := range reg.filter {
 		var accepted bool
 		accepted, data = f.Filter(data)
 		if !accepted {
-			LoggingClient.Debug("Event filtered " + event.ID)
+			LoggingClient.Debug(fmt.Sprintf("%s Event filtered: %s", event.Device, event.ID.Hex()))
 			return
 		}
+	}
+
+	// Due to rate limits, we might see an event on the ZeroMQ
+	// bus which we might have already send
+	// consider the case where edge goes offline for 24 hrs.
+	// It would have accumulated 1440 events (60 * 24) in that time period
+	// On coming back online it would have taken approximately 24 minutes to
+	// clear the backlog and during this timeframe core-data would have
+	// resubmitted the same event multiple times for retransmit
+	// This approach of first checking if event is still in db and not yet
+	// marked as pushed avoids resending the same event multiple times due
+	// to the race condiotion describe above
+	evtdb, err := ec.Event(event.ID.Hex())
+	if err != nil {
+		LoggingClient.Error(fmt.Sprintf("%s Ignored event %s, removed from DB",
+			event.Device, event.ID.Hex()))
+		return
+	}
+
+	if evtdb.Pushed > 0 {
+		LoggingClient.Error(fmt.Sprintf("%s Ignored event %s, Already pushed",
+			event.Device, event.ID.Hex()))
+		return
 	}
 
 	if reg.format == nil {
@@ -217,7 +244,7 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 		bytes = reg.encrypt.Transform(compressed)
 	}
 	if reg.sender.Send(bytes, ctx) == false {
-		LoggingClient.Error("MQTT message send failure")
+		LoggingClient.Error(fmt.Sprintf("MQTT comm failure event %s", event.ID.Hex()))
 		return
 	}
 
@@ -226,8 +253,12 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 		err := ec.MarkPushed(event.ID, ctx)
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
+		} else {
+			LoggingClient.Info(fmt.Sprintf("Marked event %s as pushed", id))
 		}
 	}
+	LoggingClient.Debug(fmt.Sprintf("Sent event %s with registration: %s", event.ID.Hex(),
+		reg.registration.Name))
 	return
 }
 

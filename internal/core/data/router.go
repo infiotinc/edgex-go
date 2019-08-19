@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-<<<<<<< HEAD
 	"strconv"
 
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
@@ -30,18 +29,6 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
-=======
-	"runtime"
-	"strconv"
-
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
->>>>>>> support for JWT based authentication with gcp iot core.
 )
 
 func LoadRestRoutes() *mux.Router {
@@ -610,7 +597,6 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		LoggingClient.Info("Retrying to send unpushed events")
 		count, err := retryFailedEvents()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -623,14 +609,13 @@ func retryHandler(w http.ResponseWriter, r *http.Request) {
 
 		//TODO: Should this call return a list of events rather than count?
 	case http.MethodGet:
-		LoggingClient.Info("Getting a count of unpushed events")
 		count, err := getUnPushedEventsCount()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		LoggingClient.Info(fmt.Sprintf("Number of unpushed evts: %d\n", count))
+		LoggingClient.Info(fmt.Sprintf("Number of outstanding events: %d", count))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strconv.Itoa(count)))

@@ -122,13 +122,9 @@ func addNewEvent(e models.Event, ctx context.Context) (string, error) {
 		e.ID = id
 	}
 
-<<<<<<< HEAD
-	putEventOnQueue(e, ctx)                         // Push the aux struct to export service (It has the actual readings)
-=======
 	LoggingClient.Info(fmt.Sprintf("Posting Event of len: %d, id: %v", len(e.String()), retVal))
+	putEventOnQueue(e, ctx)                         // Push the aux struct to export service (It has the actual readings)
 
-	putEventOnQueue(e)                              // Push the aux struct to export service (It has the actual readings)
->>>>>>> support for JWT based authentication with gcp iot core.
 	chEvents <- DeviceLastReported{e.Device}        // update last reported connected (device)
 	chEvents <- DeviceServiceLastReported{e.Device} // update last reported connected (device service)
 
@@ -231,7 +227,6 @@ func updateEventPushDate(id string, ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	e.Pushed = db.MakeTimestamp()
 	err = updateEvent(models.Event{Event: e}, ctx)
 	if err != nil {
@@ -241,8 +236,10 @@ func updateEventPushDate(id string, ctx context.Context) error {
 }
 
 // Put event on the message queue to be processed by the rules engine
+<<<<<<< HEAD
 func putEventOnQueue(evt models.Event, ctx context.Context) {
-	LoggingClient.Info("Putting event on message queue")
+	LoggingClient.Info(fmt.Sprintf("Putting event %s %s on message queue",
+		evt.Device, evt.ID.Hex()))
 
 	evt.CorrelationId = correlation.FromContext(ctx)
 	//Re-marshal JSON content into bytes.
@@ -319,7 +316,7 @@ func scrubPushedEvents() (int, error) {
 	// Delete all the events
 	count := len(events)
 	for _, event := range events {
-		LoggingClient.Info(fmt.Sprintf("Deleting ID: %v", event.ID.Hex()))
+		LoggingClient.Info(fmt.Sprintf("Deleting ID: %v pushed: %v", event.ID.Hex(), event.Pushed))
 		if err = deleteEvent(event); err != nil {
 			LoggingClient.Error(err.Error())
 			return 0, err
@@ -355,8 +352,6 @@ func getUnPushedEventsCount() (int, error) {
 //TODO: Should there be a time check on returned events to ensure no "in-flight"
 //events are retried??
 func retryFailedEvents() (int, error) {
-	LoggingClient.Info("Retrying to send events that haven't been pushed out")
-
 	// Get the events that haven't been sent out by export-distro
 	events, err := dbClient.EventsNotPushed()
 	if err != nil {
@@ -366,8 +361,9 @@ func retryFailedEvents() (int, error) {
 
 	// Add all the events to zeromq for pushing to export-distro
 	count := len(events)
+	LoggingClient.Info(fmt.Sprintf("%d Events not yet pushed, retrying..", count))
+
 	for _, event := range events {
-		LoggingClient.Info(fmt.Sprintf("Adding event ID: %v to 0MQ", event.ID.Hex()))
 		putEventOnQueue(event) // Push the aux struct to export service (It has the actual readings)
 	}
 

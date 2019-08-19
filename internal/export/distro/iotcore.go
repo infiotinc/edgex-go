@@ -12,8 +12,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
-
+	"time"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
@@ -91,10 +92,26 @@ func newIoTCoreSender(addr models.Addressable) sender {
 
 	LoggingClient.Info(fmt.Sprintf("Topic: %s, Url: %s\n",
 		addr.Topic, broker))
-	return &mqttSender{
+
+	sender := &mqttSender{
 		client: MQTT.NewClient(opts),
 		topic:  addr.Topic,
+		lastMsgPublished: time.Now(),
+		firstMsgPublished: false,
+		rateLimit: false,
+		minDeltaBetweenMsgs: 0,
 	}
+
+	// TODO: Make it generic
+	if filepath.Base(sender.topic) == "state" {
+		sender.rateLimit = true
+		sender.minDeltaBetweenMsgs, _ = time.ParseDuration("1s")
+		LoggingClient.Info(fmt.Sprintf("Topic %s will be rate limited", sender.topic))
+	} else {
+		LoggingClient.Info(fmt.Sprintf("Topic %s will not be rate limited", sender.topic))
+	}
+
+	return sender
 }
 
 func (sender *iotCoreSender) Send(data []byte) bool {

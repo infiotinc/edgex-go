@@ -67,7 +67,8 @@ func initZmq(eventCh chan *models.Event) {
 		} else {
 			for _, str := range msg {
 				event := parseEvent(str)
-				LoggingClient.Info(fmt.Sprintf("Event received: %d", len(str)))
+				LoggingClient.Info(fmt.Sprintf("%s Event recvd %s",
+					event.Device, event.ID.Hex()))
 				eventCh <- event
 			}
 		}
