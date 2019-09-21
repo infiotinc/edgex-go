@@ -107,7 +107,9 @@ func httpServer() http.Handler {
 
 func StartHTTPServer(errChan chan error) {
 	go func() {
-		p := fmt.Sprintf(":%d", Configuration.Service.Port)
+		p := fmt.Sprintf("%s:%d", 
+		                  Configuration.Service.Host,
+		                  Configuration.Service.Port)
 		errChan <- http.ListenAndServe(p, httpServer())
 	}()
 }

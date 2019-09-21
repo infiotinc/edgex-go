@@ -31,6 +31,10 @@ import (
 	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 )
 
+const (
+	host = "127.0.0.1"
+)
+
 func main() {
 
 	// TODO: 1.  What kind of discoverability scenarios should be considered?
@@ -77,11 +81,12 @@ func main() {
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, agent.Configuration.ServicePort)
+	startHttpServer(errs, host, agent.Configuration.ServicePort)
 
 	// Time it took to start service
 	agent.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
 	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.ServicePort))
+	agent.LoggingClient.Info("Listening on host: " + host)
 	c := <-errs
 	agent.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
 }
@@ -99,9 +104,10 @@ func listenForInterrupt(errChan chan error) {
 	}()
 }
 
-func startHttpServer(errChan chan error, port int) {
+func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		r := agent.LoadRestRoutes()
-		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), r)
+		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), r)
+		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), r)
 	}()
 }

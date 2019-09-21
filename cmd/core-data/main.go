@@ -61,11 +61,13 @@ func main() {
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, data.Configuration.Service.Port)
+	startHttpServer(errs, data.Configuration.Service.Host, data.Configuration.Service.Port)
 
 	// Time it took to start service
 	data.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
 	data.LoggingClient.Info("Listening on port: " + strconv.Itoa(data.Configuration.Service.Port))
+	data.LoggingClient.Info("Listening on Host: " + data.Configuration.Service.Host)
+
 	c := <-errs
 	data.Destruct()
 	data.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
@@ -84,9 +86,11 @@ func listenForInterrupt(errChan chan error) {
 	}()
 }
 
-func startHttpServer(errChan chan error, port int) {
+func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		r := data.LoadRestRoutes()
-		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
+		//errChan <- http.ListenAndServe("127.0.0.1:"+strconv.Itoa(port), context.ClearHandler(r))
+		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
+
 	}()
 }
