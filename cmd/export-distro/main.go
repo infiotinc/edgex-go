@@ -65,6 +65,7 @@ func main() {
 	// Time it took to start service
 	distro.LoggingClient.Info("Service started in: " + time.Since(start).String())
 	distro.LoggingClient.Info("Listening on port: " + strconv.Itoa(distro.Configuration.Service.Port))
+	distro.LoggingClient.Info("Listening on host: " + distro.Configuration.Service.Host)
 	c := <-errs
 	distro.Destruct()
 	distro.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))

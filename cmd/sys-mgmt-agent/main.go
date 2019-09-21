@@ -35,6 +35,10 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
+const (
+	host = "127.0.0.1"
+)
+
 func main() {
 	start := time.Now()
 	var useRegistry bool
@@ -64,11 +68,12 @@ func main() {
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, agent.Configuration.Service.Port)
+	startHttpServer(errs, host, agent.Configuration.ServicePort)
 
 	// Time it took to start service
-	agent.LoggingClient.Info("Service started in: " + time.Since(start).String())
-	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.Service.Port))
+	agent.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.ServicePort))
+	agent.LoggingClient.Info("Listening on host: " + host)
 	c := <-errs
 	agent.Destruct()
 	agent.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
@@ -89,10 +94,11 @@ func listenForInterrupt(errChan chan error) {
 	}()
 }
 
-func startHttpServer(errChan chan error, port int) {
+func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = agent.LoggingClient
 		r := agent.LoadRestRoutes()
-		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
+		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
+
 	}()
 }

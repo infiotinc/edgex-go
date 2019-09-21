@@ -57,14 +57,17 @@ func main() {
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, scheduler.Configuration.Service.Port)
+	startHttpServer(errs,
+		scheduler.Configuration.Service.Host,
+		scheduler.Configuration.Service.Port)
 
 	// Start the ticker
 	scheduler.StartTicker()
 
 	// Time it took to start service
-	scheduler.LoggingClient.Info("Service started in: " + time.Since(start).String())
-	scheduler.LoggingClient.Info("Listening on port: " + strconv.Itoa(scheduler.Configuration.Service.Port))
+	scheduler.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	scheduler.LoggingClient.Info("Listening on port: "+strconv.Itoa(scheduler.Configuration.Service.Port), "")
+	scheduler.LoggingClient.Info("Listening on host: " + scheduler.Configuration.Service.Host)
 	c := <-errs
 	scheduler.Destruct()
 	scheduler.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
@@ -88,10 +91,11 @@ func listenForInterrupt(errChan chan error) {
 	}()
 }
 
-func startHttpServer(errChan chan error, port int) {
+func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = scheduler.LoggingClient
 		r := scheduler.LoadRestRoutes()
-		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
+		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
+		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
 	}()
 }

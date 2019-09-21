@@ -64,6 +64,7 @@ func main() {
 	// Time it took to start service
 	client.LoggingClient.Info("Service started in: " + time.Since(start).String())
 	client.LoggingClient.Info("Listening on port: " + strconv.Itoa(client.Configuration.Service.Port))
+	client.LoggingClient.Info("Listening on host: " + client.Configuration.Service.Host)
 	c := <-errs
 	client.Destruct()
 	client.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))

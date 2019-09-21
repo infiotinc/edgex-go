@@ -342,7 +342,9 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 // Loop - registration loop
 func Loop() {
 	go func() {
-		p := fmt.Sprintf(":%d", Configuration.Service.Port)
+		p := fmt.Sprintf("%s:%d",
+			Configuration.Service.Host,
+			Configuration.Service.Port)
 		LoggingClient.Info(fmt.Sprintf("Starting Export Distro %s", p))
 		messageErrors <- http.ListenAndServe(p, httpServer())
 	}()
