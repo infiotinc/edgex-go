@@ -95,7 +95,7 @@ type DBClient interface {
 	EventsPushed() ([]contract.Event, error)
 
 	// Get events that have been pushed (pushed field is 0)
-	EventsNotPushed() ([]models.Event, error)
+	EventsNotPushed() ([]contract.Event, error)
 
 	// Delete all readings and events
 	ScrubAllEvents() error

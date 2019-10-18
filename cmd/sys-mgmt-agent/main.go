@@ -68,11 +68,11 @@ func main() {
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, host, agent.Configuration.ServicePort)
+	startHttpServer(errs, host, agent.Configuration.Service.Port)
 
 	// Time it took to start service
 	agent.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.ServicePort))
+	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.Service.Port))
 	agent.LoggingClient.Info("Listening on host: " + host)
 	c := <-errs
 	agent.Destruct()

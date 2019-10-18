@@ -102,7 +102,7 @@ func (sender *mqttSender) Send(data []byte, ctx context.Context) bool {
 				//	sender.topic, event.ID.Hex()))
 				LoggingClient.Info(
 					fmt.Sprintf("%s Delaying processing event due to rate limit",
-					sender.topic)
+					sender.topic))
 					
 				time.Sleep(500 * time.Millisecond)
 				timeElapsedLastMessage = time.Now().Sub(sender.lastMsgPublished)

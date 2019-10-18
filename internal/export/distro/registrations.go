@@ -192,7 +192,7 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 	}
 
 	LoggingClient.Debug(fmt.Sprintf("%s Processing Event event: %s",
-		event.Device, event.ID.Hex()))
+		event.Device, event.ID))
 
 	data := event.ToContract()
 
@@ -200,7 +200,7 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 		var accepted bool
 		accepted, data = f.Filter(data)
 		if !accepted {
-			LoggingClient.Debug(fmt.Sprintf("%s Event filtered: %s", event.Device, event.ID.Hex()))
+			LoggingClient.Debug(fmt.Sprintf("%s Event filtered: %s", event.Device, event.ID))
 			return
 		}
 	}
@@ -215,16 +215,16 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 	// This approach of first checking if event is still in db and not yet
 	// marked as pushed avoids resending the same event multiple times due
 	// to the race condiotion describe above
-	evtdb, err := ec.Event(event.ID.Hex())
+	evtdb, err := ec.Event(event.ID, ctx)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("%s Ignored event %s, removed from DB",
-			event.Device, event.ID.Hex()))
+			event.Device, event.ID))
 		return
 	}
 
 	if evtdb.Pushed > 0 {
 		LoggingClient.Error(fmt.Sprintf("%s Ignored event %s, Already pushed",
-			event.Device, event.ID.Hex()))
+			event.Device, event.ID))
 		return
 	}
 
@@ -244,12 +244,12 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 		bytes = reg.encrypt.Transform(compressed)
 	}
 	if reg.sender.Send(bytes, ctx) == false {
-		LoggingClient.Error(fmt.Sprintf("MQTT comm failure event %s", event.ID.Hex()))
+		LoggingClient.Error(fmt.Sprintf("MQTT comm failure event %s", event.ID))
 		return
 	}
 
 	if Configuration.Writable.MarkPushed {
-		id := event.ID.Hex()
+		id := event.ID
 		err := ec.MarkPushed(event.ID, ctx)
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
@@ -257,7 +257,7 @@ func (reg registrationInfo) handleJSON(msg msgTypes.MessageEnvelope, ctx context
 			LoggingClient.Info(fmt.Sprintf("Marked event %s as pushed", id))
 		}
 	}
-	LoggingClient.Debug(fmt.Sprintf("Sent event %s with registration: %s", event.ID.Hex(),
+	LoggingClient.Debug(fmt.Sprintf("Sent event %s with registration: %s", event.ID,
 		reg.registration.Name))
 	return
 }

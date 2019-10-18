@@ -122,8 +122,8 @@ func addNewEvent(e models.Event, ctx context.Context) (string, error) {
 		e.ID = id
 	}
 
-	LoggingClient.Info(fmt.Sprintf("Posting Event of len: %d, id: %v", len(e.String()), retVal))
-	putEventOnQueue(e, ctx)                         // Push the aux struct to export service (It has the actual readings)
+	LoggingClient.Info(fmt.Sprintf("Posting Event of len: %d, id: %v", len(e.String()), e.ID))
+	putEventOnQueue(e, ctx) // Push the aux struct to export service (It has the actual readings)
 
 	chEvents <- DeviceLastReported{e.Device}        // update last reported connected (device)
 	chEvents <- DeviceServiceLastReported{e.Device} // update last reported connected (device service)
@@ -236,10 +236,9 @@ func updateEventPushDate(id string, ctx context.Context) error {
 }
 
 // Put event on the message queue to be processed by the rules engine
-<<<<<<< HEAD
 func putEventOnQueue(evt models.Event, ctx context.Context) {
 	LoggingClient.Info(fmt.Sprintf("Putting event %s %s on message queue",
-		evt.Device, evt.ID.Hex()))
+		evt.Device, evt.ID))
 
 	evt.CorrelationId = correlation.FromContext(ctx)
 	//Re-marshal JSON content into bytes.
@@ -316,7 +315,7 @@ func scrubPushedEvents() (int, error) {
 	// Delete all the events
 	count := len(events)
 	for _, event := range events {
-		LoggingClient.Info(fmt.Sprintf("Deleting ID: %v pushed: %v", event.ID.Hex(), event.Pushed))
+		LoggingClient.Info(fmt.Sprintf("Deleting ID: %v pushed: %v", event.ID, event.Pushed))
 		if err = deleteEvent(event); err != nil {
 			LoggingClient.Error(err.Error())
 			return 0, err
@@ -342,7 +341,7 @@ func getUnPushedEventsCount() (int, error) {
 	// Log the events for debugging purposes, can send back the events in future
 	count := len(events)
 	for _, event := range events {
-		LoggingClient.Info(fmt.Sprintf("Unpushed ID: %v", event.ID.Hex()))
+		LoggingClient.Info(fmt.Sprintf("Unpushed ID: %v", event.ID))
 	}
 
 	return count, nil
@@ -351,7 +350,7 @@ func getUnPushedEventsCount() (int, error) {
 //Try to send events to export-distro again for sending out through MQTT
 //TODO: Should there be a time check on returned events to ensure no "in-flight"
 //events are retried??
-func retryFailedEvents() (int, error) {
+func retryFailedEvents(ctx context.Context) (int, error) {
 	// Get the events that haven't been sent out by export-distro
 	events, err := dbClient.EventsNotPushed()
 	if err != nil {
@@ -364,7 +363,8 @@ func retryFailedEvents() (int, error) {
 	LoggingClient.Info(fmt.Sprintf("%d Events not yet pushed, retrying..", count))
 
 	for _, event := range events {
-		putEventOnQueue(event) // Push the aux struct to export service (It has the actual readings)
+		mapped := models.Event{Event: event}
+		putEventOnQueue(mapped, ctx) // Push the aux struct to export service (It has the actual readings)
 	}
 
 	return count, nil

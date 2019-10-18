@@ -594,10 +594,11 @@ func scrubHandler(w http.ResponseWriter, r *http.Request) {
 // Getting a count of events that haven't been out through a GET call
 func retryHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	ctx := r.Context()
 
 	switch r.Method {
 	case http.MethodPost:
-		count, err := retryFailedEvents()
+		count, err := retryFailedEvents(ctx)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

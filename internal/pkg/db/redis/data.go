@@ -322,7 +322,7 @@ func (c *Client) EventsPushed() (events []contract.Event, err error) {
 }
 
 // Get events that have not been pushed (pushed field is 0)
-func (c *Client) EventsNotPushed() (events []models.Event, err error) {
+func (c *Client) EventsNotPushed() (events []contract.Event, err error) {
 	conn := c.Pool.Get()
 	defer conn.Close()
 
@@ -332,7 +332,7 @@ func (c *Client) EventsNotPushed() (events []models.Event, err error) {
 		return events, err
 	}
 
-	events = make([]models.Event, len(objects))
+	events = make([]contract.Event, len(objects))
 	err = unmarshalEvents(objects, events)
 	if err != nil {
 		return events, err
