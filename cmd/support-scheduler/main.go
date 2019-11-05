@@ -65,8 +65,8 @@ func main() {
 	scheduler.StartTicker()
 
 	// Time it took to start service
-	scheduler.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	scheduler.LoggingClient.Info("Listening on port: "+strconv.Itoa(scheduler.Configuration.Service.Port), "")
+	scheduler.LoggingClient.Info("Service started in: "+time.Since(start).String())
+	scheduler.LoggingClient.Info("Listening on port: "+strconv.Itoa(scheduler.Configuration.Service.Port))
 	scheduler.LoggingClient.Info("Listening on host: " + scheduler.Configuration.Service.Host)
 	c := <-errs
 	scheduler.Destruct()
@@ -95,7 +95,6 @@ func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = scheduler.LoggingClient
 		r := scheduler.LoadRestRoutes()
-		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
 		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
 	}()
 }

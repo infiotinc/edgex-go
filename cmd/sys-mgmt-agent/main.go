@@ -71,7 +71,7 @@ func main() {
 	startHttpServer(errs, host, agent.Configuration.Service.Port)
 
 	// Time it took to start service
-	agent.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	agent.LoggingClient.Info("Service started in: "+time.Since(start).String())
 	agent.LoggingClient.Info("Listening on port: " + strconv.Itoa(agent.Configuration.Service.Port))
 	agent.LoggingClient.Info("Listening on host: " + host)
 	c := <-errs

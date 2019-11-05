@@ -66,8 +66,8 @@ func main() {
 	startHttpServer(errs, command.Configuration.Service.Host, command.Configuration.Service.Port)
 
 	// Time it took to start service
-	command.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	command.LoggingClient.Info("Listening on port: "+strconv.Itoa(command.Configuration.Service.Port), "")
+	command.LoggingClient.Info("Service started in: "+time.Since(start).String())
+	command.LoggingClient.Info("Listening on port: "+strconv.Itoa(command.Configuration.Service.Port))
 	command.LoggingClient.Info("Listening on host: " + command.Configuration.Service.Host)
 	c := <-errs
 	command.Destruct()
@@ -93,7 +93,6 @@ func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = command.LoggingClient
 		r := command.LoadRestRoutes()
-		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
 		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
 	}()
 }

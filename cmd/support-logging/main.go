@@ -56,8 +56,8 @@ func main() {
 	listenForInterrupt(errs)
 
 	// Time it took to start service
-	logging.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	logging.LoggingClient.Info("Listening on port: "+strconv.Itoa(logging.Configuration.Service.Port), "")
+	logging.LoggingClient.Info("Service started in: "+time.Since(start).String())
+	logging.LoggingClient.Info("Listening on port: "+strconv.Itoa(logging.Configuration.Service.Port))
 	logging.LoggingClient.Info("Listening on host: " + logging.Configuration.Service.Host)
 	startHTTPServer(errs)
 

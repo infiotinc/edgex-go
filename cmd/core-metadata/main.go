@@ -94,7 +94,6 @@ func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = metadata.LoggingClient //Not thrilled about this, can't think of anything better ATM
 		r := metadata.LoadRestRoutes()
-		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
 		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), context.ClearHandler(r))
 
 	}()

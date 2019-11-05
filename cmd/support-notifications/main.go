@@ -99,7 +99,6 @@ func startHttpServer(errChan chan error, host string, port int) {
 	go func() {
 		correlation.LoggingClient = notifications.LoggingClient
 		r := notifications.LoadRestRoutes()
-		//errChan <- http.ListenAndServe(":"+strconv.Itoa(port), r)
 		errChan <- http.ListenAndServe(host+":"+strconv.Itoa(port), r)
 	}()
 }
