@@ -218,7 +218,9 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 	if reg.sender.Send(encrypted, event) == false {
 		LoggingClient.Error(fmt.Sprintf("MQTT comm failure event %s", event.ID.Hex()))
-		return
+	} else {
+		LoggingClient.Debug(fmt.Sprintf("Sent event %s with registration: %s", event.ID.Hex(),
+			reg.registration.Name))
 	}
 
 	if Configuration.MarkPushed {
@@ -231,8 +233,6 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		}
 	}
 
-	LoggingClient.Debug(fmt.Sprintf("Sent event %s with registration: %s", event.ID.Hex(),
-		reg.registration.Name))
 }
 
 func registrationLoop(reg *registrationInfo) {
